@@ -1,5 +1,6 @@
 package com.google.protobuf.gradle
 
+import com.google.protobuf.gradle.version.GradleVersion
 import groovy.transform.CompileDynamic
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
@@ -12,7 +13,7 @@ import spock.lang.Unroll
  */
 @CompileDynamic
 class ProtobufKotlinDslCopySpecTest extends Specification {
-  private static final List<String> GRADLE_VERSIONS = ["5.6", "6.0", "6.7.1", "7.0"]
+  private static final List<String> GRADLE_VERSIONS = [GradleVersion.VERSION_5_6, GradleVersion.VERSION_6_0, GradleVersion.VERSION_6_7_1, GradleVersion.VERSION_7_0]
 
   @Unroll
   void "testProjectKotlinDslCopySpec should declare explicit copy spec [gradle #gradleVersion]"() {

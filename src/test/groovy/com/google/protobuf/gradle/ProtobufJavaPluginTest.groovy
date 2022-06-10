@@ -1,6 +1,8 @@
 package com.google.protobuf.gradle
 
 import com.google.common.collect.ImmutableSet
+import com.google.protobuf.gradle.version.GradleVersion
+import com.google.protobuf.gradle.version.KotlinVersion
 import groovy.transform.CompileDynamic
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -16,8 +18,8 @@ import spock.lang.Unroll
 @CompileDynamic
 class ProtobufJavaPluginTest extends Specification {
   // Current supported version is Gradle 5+.
-  private static final List<String> GRADLE_VERSIONS = ["5.6", "6.0", "6.7.1"]
-  private static final List<String> KOTLIN_VERSIONS = ["1.3.20", "1.3.30"]
+  private static final List<String> GRADLE_VERSIONS = [GradleVersion.VERSION_5_6, GradleVersion.VERSION_5_6, GradleVersion.VERSION_6_7_1, GradleVersion.VERSION_7_4_2]
+  private static final List<String> KOTLIN_VERSIONS = [KotlinVersion.VERSION_1_3_20, KotlinVersion.VERSION_1_3_30]
 
   void "testApplying java and com.google.protobuf adds corresponding task to project"() {
     given: "a basic project with java and com.google.protobuf"
@@ -121,7 +123,7 @@ class ProtobufJavaPluginTest extends Specification {
     ProtobufPluginTestHelper.verifyProjectDir(projectDir)
 
     where:
-    gradleVersion << GRADLE_VERSIONS.takeRight(1)
+    gradleVersion << [GradleVersion.VERSION_6_7_1]
   }
 
   @Unroll

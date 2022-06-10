@@ -1,5 +1,8 @@
 package com.google.protobuf.gradle
 
+import com.google.protobuf.gradle.version.AgpVersion
+import com.google.protobuf.gradle.version.GradleVersion
+
 import static com.google.protobuf.gradle.ProtobufPluginTestHelper.buildAndroidProject
 
 import groovy.transform.CompileDynamic
@@ -14,8 +17,8 @@ import spock.lang.Unroll
  */
 @CompileDynamic
 class ProtobufKotlinDslPluginTest extends Specification {
-  private static final List<String> GRADLE_VERSIONS = ["5.6", "6.1.1", "6.5"]
-  private static final List<String> ANDROID_PLUGIN_VERSION = ["3.5.0", "4.0.0", "4.1.0"]
+  private static final List<String> GRADLE_VERSIONS = [GradleVersion.VERSION_5_6, GradleVersion.VERSION_6_1_1, GradleVersion.VERSION_6_5, GradleVersion.VERSION_7_4_2]
+  private static final List<String> ANDROID_PLUGIN_VERSION = [AgpVersion.VERSION_3_5_0, AgpVersion.VERSION_4_0_0, AgpVersion.VERSION_4_1_0, AgpVersion.VERSION_7_2_1]
 
   @Unroll
   void "testProjectKotlinDsl should be successfully executed (java-only project) [gradle #gradleVersion]"() {

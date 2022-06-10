@@ -1,5 +1,8 @@
 package com.google.protobuf.gradle
 
+import com.google.protobuf.gradle.version.AgpVersion
+import com.google.protobuf.gradle.version.GradleVersion
+
 import static com.google.protobuf.gradle.ProtobufPluginTestHelper.buildAndroidProject
 
 import groovy.transform.CompileDynamic
@@ -13,8 +16,8 @@ import spock.lang.Unroll
  */
 @CompileDynamic
 class AndroidProjectDetectionTest extends Specification {
-  private static final List<String> GRADLE_VERSION = ["5.6"]
-  private static final List<String> ANDROID_PLUGIN_VERSION = ["3.5.0"]
+  private static final List<String> GRADLE_VERSION = [GradleVersion.VERSION_5_6, GradleVersion.VERSION_7_4_2]
+  private static final List<String> ANDROID_PLUGIN_VERSION = [AgpVersion.VERSION_3_5_0, AgpVersion.VERSION_7_2_1]
 
   static void appendUtilIsAndroidProjectCheckTask(File buildFile, boolean assertResult) {
     buildFile << """

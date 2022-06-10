@@ -1,5 +1,9 @@
 package com.google.protobuf.gradle
 
+import com.google.protobuf.gradle.version.AgpVersion
+import com.google.protobuf.gradle.version.GradleVersion
+import com.google.protobuf.gradle.version.KotlinVersion
+
 import static com.google.protobuf.gradle.ProtobufPluginTestHelper.buildAndroidProject
 
 import groovy.transform.CompileDynamic
@@ -10,9 +14,9 @@ import spock.lang.Unroll
 
 @CompileDynamic
 class ProtobufAndroidPluginKotlinTest extends Specification {
-  private static final List<String> GRADLE_VERSION = ["5.6", "6.5-milestone-1"]
-  private static final List<String> ANDROID_PLUGIN_VERSION = ["3.5.0", "4.1.0-alpha10"]
-  private static final List<String> KOTLIN_VERSION = ["1.3.20"]
+  private static final List<String> GRADLE_VERSION = [GradleVersion.VERSION_5_6, GradleVersion.VERSION_6_5_MILESTONE_1, GradleVersion.VERSION_7_4_2]
+  private static final List<String> ANDROID_PLUGIN_VERSION = [AgpVersion.VERSION_3_5_0, AgpVersion.VERSION_4_1_APLHA10, AgpVersion.VERSION_7_2_1]
+  private static final List<String> KOTLIN_VERSION = [KotlinVersion.VERSION_1_3_20]
 
   /**
    * This test may take a significant amount of Gradle daemon Metaspace memory in some
@@ -48,6 +52,6 @@ class ProtobufAndroidPluginKotlinTest extends Specification {
     where:
     agpVersion << ANDROID_PLUGIN_VERSION
     gradleVersion << GRADLE_VERSION
-    kotlinVersion << KOTLIN_VERSION + KOTLIN_VERSION
+    kotlinVersion << KOTLIN_VERSION + KOTLIN_VERSION + KOTLIN_VERSION
     }
 }

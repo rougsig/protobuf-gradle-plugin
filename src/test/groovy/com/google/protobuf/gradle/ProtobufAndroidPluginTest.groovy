@@ -1,5 +1,8 @@
 package com.google.protobuf.gradle
 
+import com.google.protobuf.gradle.version.AgpVersion
+import com.google.protobuf.gradle.version.GradleVersion
+
 import static com.google.protobuf.gradle.ProtobufPluginTestHelper.buildAndroidProject
 import static com.google.protobuf.gradle.ProtobufPluginTestHelper.getAndroidGradleRunner
 
@@ -15,8 +18,8 @@ import spock.lang.Unroll
  */
 @CompileDynamic
 class ProtobufAndroidPluginTest extends Specification {
-  private static final List<String> GRADLE_VERSION = ["5.6", "6.5", "6.8"]
-  private static final List<String> ANDROID_PLUGIN_VERSION = ["3.5.0", "4.1.0", "4.2.0-alpha10"]
+  private static final List<String> GRADLE_VERSION = [GradleVersion.VERSION_5_6, GradleVersion.VERSION_6_5, GradleVersion.VERSION_6_8, GradleVersion.VERSION_7_4_2]
+  private static final List<String> ANDROID_PLUGIN_VERSION = [AgpVersion.VERSION_3_5_0, AgpVersion.VERSION_4_1_0, AgpVersion.VERSION_4_2_APLHA10, AgpVersion.VERSION_7_2_1]
 
   @Unroll
   void "testProjectAndroid should be successfully executed [android #agpVersion, gradle #gradleVersion]"() {
@@ -103,8 +106,8 @@ class ProtobufAndroidPluginTest extends Specification {
     result.task(":testProjectAndroid:assembleDebug").outcome == TaskOutcome.SUCCESS
 
     where:
-    agpVersion << ANDROID_PLUGIN_VERSION.takeRight(1)
-    gradleVersion << GRADLE_VERSION.takeRight(1)
+    agpVersion << [AgpVersion.VERSION_4_2_APLHA10]
+    gradleVersion << [GradleVersion.VERSION_6_8]
   }
 
   @Unroll
@@ -168,7 +171,7 @@ class ProtobufAndroidPluginTest extends Specification {
     !result.output.contains("This makes you vulnerable to https://github.com/google/protobuf-gradle-plugin/issues/248")
 
     where:
-    agpVersion << ANDROID_PLUGIN_VERSION.takeRight(1)
-    gradleVersion << GRADLE_VERSION.takeRight(1)
+    agpVersion << [AgpVersion.VERSION_4_2_APLHA10]
+    gradleVersion << [GradleVersion.VERSION_6_8]
   }
 }
