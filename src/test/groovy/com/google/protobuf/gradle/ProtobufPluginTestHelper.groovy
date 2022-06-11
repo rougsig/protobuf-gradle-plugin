@@ -69,6 +69,7 @@ final class ProtobufPluginTestHelper {
     List<File> subProjects = []
     String androidPluginVersion
     String kotlinVersion
+    Map libVersions
 
     private TestProjectBuilder(String projectName) {
       this.testProjectName = projectName
@@ -81,6 +82,11 @@ final class ProtobufPluginTestHelper {
 
     TestProjectBuilder copySubProjects(File... subProjects) {
       this.subProjects.addAll(subProjects)
+      return this
+    }
+
+    TestProjectBuilder withLibVersions(Map libVersions) {
+      this.libVersions = libVersions
       return this
     }
 
@@ -120,12 +126,20 @@ final class ProtobufPluginTestHelper {
       // Do not need to create a buildscript, the test project either has one from the template
       // or it is a composite build that does not require a top-level buildscript.
 
-      if (androidPluginVersion != null || kotlinVersion != null) {
+      if (androidPluginVersion != null || kotlinVersion != null || libVersions != null) {
         File buildFile = new File(projectDir.path, "build.gradle")
         buildFile.createNewFile()
         List<String> previousFileContents = buildFile.readLines()
         buildFile.delete()
         buildFile.createNewFile()
+
+        def versions = new StringBuilder()
+        if (libVersions) {
+          libVersions.each { entry ->
+            versions.append("ext.${entry.key} = \"${entry.value}\"")
+            versions.append('\n')
+          }
+        }
 
         buildFile << """
 buildscript {
@@ -143,6 +157,8 @@ buildscript {
         ${kotlinVersion ? "classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:\$kotlinVersion\"" : ""}
     }
 }
+    ${versions}
+
 """
         previousFileContents.each { line ->
           buildFile << line + '\n'

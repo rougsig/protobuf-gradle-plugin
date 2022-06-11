@@ -10,10 +10,8 @@ import com.google.protobuf.gradle.proto
 import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
 
-plugins {
-  id("com.android.application")
-  id("com.google.protobuf")
-}
+  apply(plugin ="com.android.application")
+  apply(plugin ="com.google.protobuf")
 
 repositories {
   maven("https://maven.google.com")
@@ -102,14 +100,14 @@ android {
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:3.0.0"
+    artifact = "com.google.protobuf:protoc:${extras["PROTOC"]}"
   }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:1.0.0-pre2"
+      artifact = "io.grpc:protoc-gen-grpc-java:${extras["PROTOC_GEN_GRPC_JAVA"]}"
     }
     id("javalite") {
-      artifact = "com.google.protobuf:protoc-gen-javalite:3.0.0"
+      artifact = "com.google.protobuf:protoc-gen-javalite:${extras["PROTOC_GEN_JAVALITE"]}"
     }
   }
   generateProtoTasks {
@@ -130,22 +128,22 @@ protobuf {
 }
 
 dependencies {
-  compile("com.android.support:appcompat-v7:23.4.0")
-  compile("com.squareup.okhttp:okhttp:2.7.5")
-  compile("javax.annotation:javax.annotation-api:1.2")
-  compile("com.google.protobuf:protobuf-lite:3.0.0")
-  compile("io.grpc:grpc-core:1.0.0-pre2")
-  compile("io.grpc:grpc-stub:1.0.0-pre2")
-  compile("io.grpc:grpc-okhttp:1.0.0-pre2")
-  compile("io.grpc:grpc-protobuf-lite:1.0.0-pre2") {
+  implementation("com.android.support:appcompat-v7:${extras["ANDROID_APPCOMPAT_V7"]}")
+  implementation("com.squareup.okhttp:okhttp:${extras["OKHTTP"]}")
+  implementation("javax.annotation:javax.annotation-api:${extras["JAVAX_ANNOTATION_API"]}")
+  implementation("com.google.protobuf:protobuf-lite:${extras["PROTOBUF_LITE"]}")
+  implementation("io.grpc:grpc-core:${extras["GRPC_CORE"]}")
+  implementation("io.grpc:grpc-stub:${extras["GRPC_STUB"]}")
+  implementation("io.grpc:grpc-okhttp:${extras["GRPC_OKHTTP"]}")
+  implementation("io.grpc:grpc-protobuf-lite:${extras["GRPC_PROTOBUF_LITE"]}") {
     // Otherwise Android compile will complain "Multiple dex files define ..."
     exclude(module = "protobuf-lite")
   }
-  compile(project(":testProjectLite")) {
+  implementation(project(":testProjectLite")) {
     exclude(module = "protobuf-lite")
   }
   protobuf(files("lib/protos.jar"))
-  testCompile("junit:junit:4.12")
+  testImplementation("junit:junit:${extras["JUNIT"]}")
 }
 
 afterEvaluate {

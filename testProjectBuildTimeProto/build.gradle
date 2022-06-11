@@ -1,14 +1,12 @@
-plugins {
-    id 'java'
-    id 'com.google.protobuf'
-}
+    apply plugin: 'java'
+    apply plugin: 'com.google.protobuf'
 
 repositories {
     maven { url "https://plugins.gradle.org/m2/" }
 }
 
 dependencies {
-    implementation 'com.google.protobuf:protobuf-java:3.0.0'
+    implementation "com.google.protobuf:protobuf-java:${ext.PROTOBUF_JAVA}"
 }
 
 sourceSets {
@@ -38,7 +36,7 @@ task generateProtobuf() {
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.0.0'
+        artifact = "com.google.protobuf:protoc:${ext.PROTOC}"
     }
     generateProtoTasks {
         all().each { task -> task.dependsOn generateProtobuf }

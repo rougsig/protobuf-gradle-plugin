@@ -2,11 +2,9 @@ import com.google.protobuf.gradle.*
 import org.gradle.api.internal.HasConvention
 import org.gradle.kotlin.dsl.provider.gradleKotlinDslOf
 
-plugins {
-    java
-    idea
-    id("com.google.protobuf")
-}
+    apply(plugin="java")
+    apply(plugin="idea")
+    apply(plugin="com.google.protobuf")
 
 // This extension is not auto generated when we apply the plugin using
 // apply(plugin = "com.google.protobuf")
@@ -36,29 +34,27 @@ the<JavaPluginConvention>().sourceSets {
     }
 }
 
-val protobufDep = "com.google.protobuf:protobuf-java:3.0.0"
-
 dependencies {
     protobuf(files("lib/protos.tar.gz"))
     protobuf(files("ext/"))
     testProtobuf(files("lib/protos-test.tar.gz"))
 
-    compile(protobufDep)
-    testCompile("junit:junit:4.12")
+    implementation("com.google.protobuf:protobuf-java:${extra["PROTOBUF_JAVA"]}")
+    testImplementation("junit:junit:4.12")
     // KotlinFooTest.kt requires reflection utilities
-    testCompile("org.jetbrains.kotlin:kotlin-reflect:1.2.0")
-    grpcCompile(protobufDep)
-    grpcCompile("io.grpc:grpc-stub:1.0.0-pre2")
-    grpcCompile("io.grpc:grpc-protobuf:1.0.0-pre2")
+    testCompile("org.jetbrains.kotlin:kotlin-reflect:${extra["KOTLIN_REFLECT"]}")
+    grpcCompile("com.google.protobuf:protobuf-java:${extra["PROTOBUF_JAVA"]}")
+    grpcCompile("io.grpc:grpc-stub:${extra["GRPC_STUB"]}")
+    grpcCompile("io.grpc:grpc-protobuf:${extra["GRPC_PROTOBUF"]}")
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.0.0"
+        artifact = "com.google.protobuf:protoc:${extras["PROTOC"]}"
     }
     plugins {
         id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.0.0-pre2"
+            artifact = "io.grpc:protoc-gen-grpc-java:${extras["PROTOC_GEN_GRPC_JAVA"]}"
         }
     }
     generateProtoTasks {

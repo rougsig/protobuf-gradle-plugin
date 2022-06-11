@@ -1,10 +1,8 @@
 // A Java project that demonstrates the customization of proto source
 // directories through the sourceSet DSL.
 
-plugins {
-  id 'java'
-  id 'com.google.protobuf'
-}
+  apply plugin: 'java'
+  apply plugin: 'com.google.protobuf'
 
 repositories {
     maven { url "https://plugins.gradle.org/m2/" }
@@ -33,13 +31,13 @@ sourceSets {
 }
 
 dependencies {
-    implementation 'com.google.protobuf:protobuf-java:3.0.0'
+  implementation "com.google.protobuf:protobuf-java:${ext.PROTOBUF_JAVA}"
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation "junit:junit:${ext.JUNIT}"
 }
 
 protobuf.protoc {
-  artifact = 'com.google.protobuf:protoc:3.0.0'
+  artifact = "com.google.protobuf:protoc:${ext.PROTOC}"
 }
 
 task printDeps(dependsOn: build) {
