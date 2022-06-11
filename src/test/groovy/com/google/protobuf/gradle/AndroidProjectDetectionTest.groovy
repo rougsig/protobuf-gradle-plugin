@@ -2,6 +2,7 @@ package com.google.protobuf.gradle
 
 import com.google.protobuf.gradle.version.AgpVersion
 import com.google.protobuf.gradle.version.GradleVersion
+import static com.google.protobuf.gradle.version.LibVersion.LibVersion
 
 import static com.google.protobuf.gradle.ProtobufPluginTestHelper.buildAndroidProject
 
@@ -37,6 +38,7 @@ class AndroidProjectDetectionTest extends Specification {
     File mainProjectDir = ProtobufPluginTestHelper.projectBuilder("singleModuleAndroidProject")
        .copyDirs('testProjectAndroid', 'testProjectAndroidBare')
        .withAndroidPlugin(agpVersion)
+       .withLibVersions(LibVersion)
        .build()
     appendUtilIsAndroidProjectCheckTask(new File(mainProjectDir, "build.gradle"), true)
 
@@ -69,6 +71,7 @@ class AndroidProjectDetectionTest extends Specification {
        .copyDirs('testProjectAndroid', 'testProjectAndroidBare')
        .copySubProjects(subProjectStaging)
        .withAndroidPlugin(agpVersion)
+       .withLibVersions(LibVersion)
        .build()
     appendUtilIsAndroidProjectCheckTask(new File(mainProjectDir, "build.gradle"), true)
 
