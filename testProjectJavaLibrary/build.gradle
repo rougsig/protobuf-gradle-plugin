@@ -1,5 +1,7 @@
 // This build is not a complete project, but is used to generate a project.
 // See: ProtobufPluginTestHelper.groovy
-  applu plugin: 'java-library'
-  applu plugin: 'com.google.protobuf'
+plugins {
+  id 'java-library'
+  id 'com.google.protobuf'
+}
 apply from: 'build_base.gradle'

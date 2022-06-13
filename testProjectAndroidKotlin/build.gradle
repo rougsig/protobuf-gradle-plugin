@@ -3,7 +3,10 @@
 
 // It is not necessary for protobuf to be applied last.
 // 'kotlin-android' plugin must be applied after 'com.android.application'.
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply plugin: 'com.google.protobuf'
+plugins {
+  id 'com.android.application'
+  id 'kotlin-android'
+  id 'com.google.protobuf'
+}
+
 apply from: 'build_base.gradle'

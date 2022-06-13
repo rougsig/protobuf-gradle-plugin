@@ -11,9 +11,11 @@ buildscript {
   }
 }
 
-apply(plugin="java")
-apply(plugin="java-library")
-apply(plugin="com.google.protobuf")
+plugins {
+  java
+  id("java-library")
+  id("com.google.protobuf")
+}
 
 repositories {
   mavenCentral()
@@ -24,21 +26,24 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+val protobufDepVersion = "3.0.0"
+val grpcVersion = "1.37.0"
+
 dependencies {
-  implementation("io.grpc:grpc-protobuf:${ext.GRPC_PROTOBUF}")
-  implementation("io.grpc:grpc-stub:$ext.GRPC_STUB")
-  implementation("com.google.protobuf:protobuf-java:${ext.PROTOBUF_JAVA}")
-  testImplementation("org.junit.jupiter:junit-jupiter-api:${ext.JUNIT_JUPITER_API}")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${ext.JUNIT_JUPITER_ENGINE}")
+  implementation("io.grpc:grpc-protobuf:$grpcVersion")
+  implementation("io.grpc:grpc-stub:$grpcVersion")
+  implementation("com.google.protobuf:protobuf-java:$protobufDepVersion")
+  testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
 }
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:${ext.PROTOC}"
+    artifact = "com.google.protobuf:protoc:$protobufDepVersion"
   }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:${ext.PROTOC_GEN_GRPC_JAVA}"
+      artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
     }
   }
 }

@@ -7,8 +7,10 @@ buildscript {
     }
 }
 
-    apply plugin: 'com.android.library'
-    apply plugin: 'com.google.protobuf'
+plugins {
+    id 'com.android.library'
+    id 'com.google.protobuf'
+}
 
 repositories {
     maven { url 'https://maven.google.com' }
@@ -17,7 +19,7 @@ repositories {
 
 android {
     compileSdkVersion 26
-    buildToolsVersion ext.ANDROID_BUILD_TOOL
+    buildToolsVersion "26.0.1"
 
     defaultConfig {
         minSdkVersion 7
@@ -52,14 +54,14 @@ android {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:${ext.PROTOC}"
+        artifact = 'com.google.protobuf:protoc:3.0.0'
     }
     plugins {
         grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:${ext.PROTOC_GEN_GRPC_JAVA}"
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.0.0-pre2'
         }
         javalite {
-            artifact = "com.google.protobuf:protoc-gen-javalite:${ext.PROTOC_GEN_JAVALITE}"
+            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
         }
     }
     generateProtoTasks {
@@ -76,14 +78,14 @@ protobuf {
 }
 
 dependencies {
-    implementation "javax.annotation:javax.annotation-api:${ext.JAVAX_ANNOTATION_API}"
-    implementation "com.google.protobuf:protobuf-lite:${ext.PROTOBUF_LITE}"
-    implementation "io.grpc:grpc-core:${ext.GRPC_CORE}"
-    implementation "io.grpc:grpc-stub:${ext.GRPC_STUB}"
-    implementation "io.grpc:grpc-okhttp:${ext.GRPC_OKHTTP}"
-    implementation("io.grpc:grpc-protobuf-lite:${ext.GRPC_PROTOBUF_LITE}") {
+    compile 'javax.annotation:javax.annotation-api:1.2'
+    compile 'com.google.protobuf:protobuf-lite:3.0.0'
+    compile 'io.grpc:grpc-core:1.0.0-pre2'
+    compile 'io.grpc:grpc-stub:1.0.0-pre2'
+    compile 'io.grpc:grpc-okhttp:1.0.0-pre2'
+    compile('io.grpc:grpc-protobuf-lite:1.0.0-pre2') {
         // Otherwise Android compile will complain "Multiple dex files define ..."
         exclude module: "protobuf-lite"
     }
-    testImplementation "junit:junit:${ext.JUNIT}"
+    testCompile 'junit:junit:4.12'
 }

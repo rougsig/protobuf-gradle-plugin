@@ -1,7 +1,9 @@
 // A Java project that demonstrates using protobuf lite version
 
-  apply(plugin='java')
-  apply(plugin='com.google.protobuf')
+plugins {
+  id 'java'
+  id 'com.google.protobuf'
+}
 
 repositories {
     maven { url "https://plugins.gradle.org/m2/" }
@@ -11,18 +13,18 @@ sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 
 dependencies {
-    implementation "com.google.protobuf:protobuf-lite:${ext.PROTOBUF_LITE}"
+    implementation 'com.google.protobuf:protobuf-lite:3.0.0'
     protobuf files("ext/")
-    testImplementation "junit:junit:${ext.JUNIT}"
+    testImplementation 'junit:junit:4.12'
 }
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:${ext.PROTOC}"
+    artifact = 'com.google.protobuf:protoc:3.0.0'
   }
   plugins {
     javalite {
-      artifact = "com.google.protobuf:protoc-gen-javalite:${ext.PROTOC_GEN_JAVALITE}"
+      artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
     }
   }
   generateProtoTasks {

@@ -12,7 +12,7 @@ buildscript {
 
 android {
     compileSdkVersion 26
-    buildToolsVersion ext.ANDROID_BUILD_TOOL
+    buildToolsVersion "26.0.1"
 
     defaultConfig {
         applicationId "io.grpc.helloworldexample"
@@ -72,14 +72,14 @@ android {
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:${ext.PROTOC}"
+    artifact = 'com.google.protobuf:protoc:3.0.0'
   }
   plugins {
     grpc {
-      artifact = "io.grpc:protoc-gen-grpc-java:${ext.PROTOC_GEN_GRPC_JAVA}"
+      artifact = 'io.grpc:protoc-gen-grpc-java:1.0.0-pre2'
     }
     javalite {
-      artifact = "com.google.protobuf:protoc-gen-javalite:${ext.PROTOC_GEN_JAVALITE}"
+      artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
     }
   }
   generateProtoTasks {
@@ -96,14 +96,14 @@ protobuf {
 }
 
 dependencies {
-    implementation "com.android.support:appcompat-v7:${ext.ANDROID_APPCOMPAT_V7}"
-    implementation "com.squareup.okhttp:okhttp:${ext.OKHTTP}"
-    implementation "javax.annotation:javax.annotation-api:${ext.JAVAX_ANNOTATION_API}"
-    implementation "com.google.protobuf:protobuf-lite:${ext.PROTOBUF_LITE}"
-    implementation "io.grpc:grpc-core:${ext.GRPC_CORE}"
-    implementation "io.grpc:grpc-stub:${ext.GRPC_STUB}"
-    implementation "io.grpc:grpc-okhttp:${ext.GRPC_OKHTTP}"
-    implementation("io.grpc:grpc-protobuf-lite:${ext.GRPC_PROTOBUF_LITE}") {
+    implementation 'com.android.support:appcompat-v7:23.4.0'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
+    implementation 'javax.annotation:javax.annotation-api:1.2'
+    implementation 'com.google.protobuf:protobuf-lite:3.0.0'
+    implementation 'io.grpc:grpc-core:1.0.0-pre2'
+    implementation 'io.grpc:grpc-stub:1.0.0-pre2'
+    implementation 'io.grpc:grpc-okhttp:1.0.0-pre2'
+    implementation('io.grpc:grpc-protobuf-lite:1.0.0-pre2') {
       // Otherwise Android compile will complain "Multiple dex files define ..."
       exclude module: "protobuf-lite"
     }
@@ -111,7 +111,7 @@ dependencies {
       exclude module: "protobuf-lite"
     }
     protobuf files('lib/protos.jar')
-    testImplementation "junit:junit:${ext.JUNIT}"
+    testImplementation 'junit:junit:4.12'
 }
 
 def assertJavaCompileHasProtoGeneratedDir(Object variant, Collection<String> codegenPlugins) {

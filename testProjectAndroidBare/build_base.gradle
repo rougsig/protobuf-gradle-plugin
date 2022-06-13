@@ -1,6 +1,6 @@
 android {
   compileSdkVersion 26
-  buildToolsVersion ext.ANDROID_BUILD_TOOL
+  buildToolsVersion "26.0.1"
 
   defaultConfig {
     applicationId "io.dont.build.me"
