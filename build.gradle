@@ -1,17 +1,15 @@
 plugins {
-  id "idea"
-  id "eclipse"
-
-  id "maven-publish"
   id "signing"
+  id "maven-publish"
   id "com.gradle.plugin-publish" version "1.0.0"
 
   id "codenarc"
   id "com.github.ben-manes.versions" version "0.42.0"
 
   id "groovy"
-  id "org.gradle.kotlin.kotlin-dsl" version "2.3.3"
-  id "org.jetbrains.kotlin.jvm" version "1.7.20"
+  // Synchronize version with gradle version
+  id "org.gradle.kotlin.kotlin-dsl" version "1.4.9"
+  id "org.jetbrains.kotlin.jvm" version "1.4.20"
 }
 
 println """\
@@ -43,7 +41,7 @@ dependencies {
   testImplementation gradleTestKit()
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'commons-io:commons-io:2.11.0'
-  testImplementation('org.spockframework:spock-core:2.2-groovy-3.0') {
+  testImplementation('org.spockframework:spock-core:2.2-groovy-2.5') {
     exclude group: 'org.codehaus.groovy'
   }
 }
@@ -63,6 +61,8 @@ tasks.named('compileKotlin') {
 }
 
 tasks.named("test") {
+  useJUnitPlatform()
+
   testLogging {
     events = ["standard_out", "standard_error", "started", "passed", "failed", "skipped"]
   }
