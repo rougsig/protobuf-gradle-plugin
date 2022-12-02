@@ -28,41 +28,34 @@
  */
 package com.google.protobuf.gradle.internal
 
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.TestExtension
-import com.android.build.gradle.TestedExtension
-import com.android.build.gradle.api.BaseVariant
-import groovy.transform.CompileStatic
-import org.gradle.api.Action
-import org.gradle.api.Project
+import groovy.transform.CompileDynamic
+import com.android.build.api.dsl.AndroidSourceSet
+import com.android.build.gradle.api.AndroidSourceSet as DeprecatedAndroidSourceSet
+import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.plugins.ExtensionContainer
 
-@CompileStatic
-class ProjectExt {
-  private ProjectExt() {
+@CompileDynamic
+class AndroidSourceSetFacade {
+  private final Object sourceSet
+
+  AndroidSourceSetFacade(Object sourceSet) {
+    this.sourceSet = sourceSet
+    if (sourceSet instanceof DeprecatedAndroidSourceSet) {
+      return
+    }
+    if (sourceSet instanceof AndroidSourceSet) {
+      return
+    }
+    throw new IllegalArgumentException("source set should be 'com.android.build.api.dsl.AndroidSourceSet' " +
+      "or 'com.android.build.gradle.api.AndroidSourceSet', but '${sourceSet.class.packageName}' was present")
   }
 
-  @SuppressWarnings(["CouldBeSwitchStatement"]) // `if` is better than fallthrough `switch`
-  static void allVariants(final Project project, final Action<? extends BaseVariant> action) {
-    BaseExtension android = project.extensions.getByName("android") as BaseExtension
-    project.logger.debug("$project has '$android'")
-
-    if (android instanceof AppExtension) {
-      (android as AppExtension).getApplicationVariants().all(action)
-    }
-
-    if (android instanceof LibraryExtension) {
-      (android as LibraryExtension).getLibraryVariants().all(action)
-    }
-
-    if (android instanceof TestExtension) {
-      (android as TestExtension).getApplicationVariants().all(action)
-    }
-
-    if (android instanceof TestedExtension) {
-      (android as TestedExtension).getTestVariants().all(action)
-      (android as TestedExtension).getUnitTestVariants().all(action)
-    }
+  String getName() {
+    return this.sourceSet.name
   }
+
+  ExtensionContainer getExtensions() {
+    return (this.sourceSet as ExtensionAware).extensions
+  }
+
 }
