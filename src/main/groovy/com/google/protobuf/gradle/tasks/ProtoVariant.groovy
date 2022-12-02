@@ -29,6 +29,7 @@
 package com.google.protobuf.gradle.tasks
 
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.DirectoryProperty
 
 /**
@@ -48,4 +49,8 @@ interface ProtoVariant {
   NamedDomainObjectContainer<Object> getPlugins()
 
   NamedDomainObjectContainer<Object> getBuiltins()
+
+  Configuration getProtobufConf()
+
+  Configuration getCompileProtoPathConf()
 }

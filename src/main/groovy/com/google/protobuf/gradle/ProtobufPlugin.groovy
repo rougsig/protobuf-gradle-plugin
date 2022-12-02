@@ -36,6 +36,7 @@ import com.android.builder.model.SourceProvider
 import com.google.protobuf.gradle.internal.ProjectExt
 import com.google.protobuf.gradle.internal.ProtoSourceSetObjectFactory
 import com.google.protobuf.gradle.tasks.ProtoSourceSet
+import com.google.protobuf.gradle.tasks.ProtoVariant
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import groovy.transform.TypeCheckingMode
@@ -46,17 +47,17 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
-import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.artifacts.ArtifactAttributes
 import org.gradle.api.plugins.AppliedPlugin
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.SourceTask
-import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.util.GradleVersion
 
 /**
@@ -142,12 +143,15 @@ class ProtobufPlugin implements Plugin<Project> {
             addTasksForVariant(variant, variantSourceSets, postConfigure)
           }
         } else {
-          project.sourceSets.configureEach { sourceSet ->
+          SourceSetContainer sourceSets = project.extensions.getByType(SourceSetContainer)
+          sourceSets.all { SourceSet sourceSet ->
+            ProtoVariant protoVariant = protobufExtension.variants.create(sourceSet.name)
+
             ProtoSourceSet protoSourceSet = protobufExtension.sourceSets.create(sourceSet.name)
             addSourceSetExtension(sourceSet, protoSourceSet)
-            Configuration protobufConfig = createProtobufConfiguration(protoSourceSet)
-            Configuration compileProtoPath = createCompileProtoPathConfiguration(protoSourceSet)
-            addTasksForSourceSet(sourceSet, protoSourceSet, protobufConfig, compileProtoPath, postConfigure)
+
+            configureProtoVariantJava(sourceSet, protoSourceSet, protoVariant)
+            registerProtoTasksJava(protoVariant, postConfigure)
           }
         }
         project.afterEvaluate {
@@ -163,6 +167,29 @@ class ProtobufPlugin implements Plugin<Project> {
         }
     }
 
+  private void configureProtoVariantJava(
+    SourceSet sourceSet,
+    ProtoSourceSet protoSourceSet,
+    ProtoVariant protoVariant
+  ) {
+    protoVariant.builtins.create("java")
+
+    protoVariant.sources.extendsFrom(protoSourceSet)
+    sourceSet.java.srcDirs(protoVariant.sources.output)
+
+    // Include source proto files in the compiled archive,
+    // so that proto files from dependent projects can import them.
+    sourceSet.resources.srcDirs(protoVariant.sources.proto.include('**/*.proto'))
+
+    // Make protos in 'test' variant able to import protos from the 'main' variant.
+    // Pass include proto files from main to test.
+    if (protoVariant.name == SourceSet.TEST_SOURCE_SET_NAME) {
+      protoVariant.sources.includesFrom(protobufExtension.sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME))
+    }
+
+    configureCompileProtoPathConfJava(protoVariant)
+  }
+
     /**
      * Creates a 'protobuf' configuration for the given source set. The build author can
      * configure dependencies for it. The extract-protos task of each source set will
@@ -176,44 +203,50 @@ class ProtobufPlugin implements Plugin<Project> {
       }
     }
 
-    /**
-     * Creates an internal 'compileProtoPath' configuration for the given source set that extends
-     * compilation configurations as a bucket of dependencies with resources attribute.
-     * The extract-include-protos task of each source set will extract protobuf files from
-     * resolved dependencies in this configuration.
-     *
-     * <p> For Java projects only.
-     * <p> This works around 'java-library' plugin not exposing resources to consumers for compilation.
-     */
-    private Configuration createCompileProtoPathConfiguration(ProtoSourceSet protoSourceSet) {
-      String compileProtoConfigName = Utils.getConfigName(protoSourceSet.name, 'compileProtoPath')
-      Configuration compileConfig =
-              project.configurations.getByName(Utils.getConfigName(protoSourceSet.name, 'compileOnly'))
-      Configuration implementationConfig =
-              project.configurations.getByName(Utils.getConfigName(protoSourceSet.name, 'implementation'))
-      return project.configurations.create(compileProtoConfigName) { Configuration it ->
-          it.visible = false
-          it.transitive = true
-          it.extendsFrom = [compileConfig, implementationConfig]
-          it.canBeConsumed = false
-          it.getAttributes()
-                // Variant attributes are not inherited. Setting it too loosely can
-                // result in ambiguous variant selection errors.
-                // CompileProtoPath only need proto files from dependency's resources.
-                // LibraryElement "resources" is compatible with "jar" (if a "resources" variant is
-                // not found, the "jar" variant will be used).
-                .attribute(
-                        LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                        project.getObjects().named(LibraryElements, LibraryElements.RESOURCES))
-                // Although variants with any usage has proto files, not setting usage attribute
-                // can result in ambiguous variant selection if the producer provides multiple
-                // variants with different usage attribute.
-                // Preserve the usage attribute from CompileOnly and Implementation.
-                .attribute(
-                        Usage.USAGE_ATTRIBUTE,
-                        project.getObjects().named(Usage, Usage.JAVA_RUNTIME))
-      }
-    }
+  /**
+   * Creates an internal 'compileProtoPath' configuration for the given source set that extends
+   * compilation configurations as a bucket of dependencies with resources attribute.
+   * The extract-include-protos task of each source set will extract protobuf files from
+   * resolved dependencies in this configuration.
+   *
+   * <p> For Java projects only.
+   * <p> This works around 'java-library' plugin not exposing resources to consumers for compilation.
+   */
+  private void configureCompileProtoPathConfJava(ProtoVariant variant) {
+    Configuration compileConfig =
+      project.configurations.getByName(Utils.getConfigName(variant.name, 'compileOnly'))
+    Configuration implementationConfig =
+      project.configurations.getByName(Utils.getConfigName(variant.name, 'implementation'))
+
+    Configuration protobufConf = variant.protobufConf
+
+    protobufConf.visible = false
+    protobufConf.transitive = true
+    protobufConf.extendsFrom = [compileConfig, implementationConfig]
+    protobufConf.canBeConsumed = false
+    protobufConf.canBeResolved = true
+
+    AttributeContainer attrs = protobufConf.attributes
+
+    // Variant attributes are not inherited. Setting it too loosely can
+    // result in ambiguous variant selection errors.
+    // CompileProtoPath only need proto files from dependency's resources.
+    // LibraryElement "resources" is compatible with "jar" (if a "resources" variant is
+    // not found, the "jar" variant will be used).
+    attrs.attribute(
+      LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+      project.objects.named(LibraryElements, LibraryElements.RESOURCES)
+    )
+
+    // Although variants with any usage has proto files, not setting usage attribute
+    // can result in ambiguous variant selection if the producer provides multiple
+    // variants with different usage attribute.
+    // Preserve the usage attribute from CompileOnly and Implementation.
+    attrs.attribute(
+      Usage.USAGE_ATTRIBUTE,
+      project.objects.named(Usage, Usage.JAVA_RUNTIME)
+    )
+  }
 
     /**
      * Adds the proto extension to the SourceSet, e.g., it creates
@@ -232,35 +265,21 @@ class ProtobufPlugin implements Plugin<Project> {
     /**
      * Creates Protobuf tasks for a sourceSet in a Java project.
      */
-    private void addTasksForSourceSet(
-        SourceSet sourceSet, ProtoSourceSet protoSourceSet, Configuration protobufConfig,
-        Configuration compileProtoPath, Collection<Closure> postConfigure) {
-      Provider<ProtobufExtract> extractProtosTask = setupExtractProtosTask(protoSourceSet, protobufConfig)
+    private void registerProtoTasksJava(
+        ProtoVariant protoVariant,
+        Collection<Closure> postConfigure
+    ) {
+      Provider<ProtobufExtract> extractProtosTask = setupExtractProtosTask(
+        protoVariant.sources,
+        protoVariant.protobufConf
+      )
 
       Provider<ProtobufExtract> extractIncludeProtosTask = setupExtractIncludeProtosTask(
-        protoSourceSet, compileProtoPath)
+        protoVariant.sources,
+        protoVariant.compileProtoPathConf
+      )
 
-      // Make protos in 'test' sourceSet able to import protos from the 'main' sourceSet.
-      // Pass include proto files from main to test.
-      if (Utils.isTest(sourceSet.name)) {
-        protoSourceSet.includesFrom(protobufExtension.sourceSets.getByName("main"))
-      }
-
-      Provider<GenerateProtoTask> generateProtoTask = addGenerateProtoTask(protoSourceSet) {
-        it.sourceSet = sourceSet
-        it.doneInitializing()
-        it.builtins.maybeCreate("java")
-      }
-
-      sourceSet.java.srcDirs(protoSourceSet.output)
-
-      // Include source proto files in the compiled archive, so that proto files from
-      // dependent projects can import them.
-      project.tasks.named(sourceSet.getTaskName('process', 'resources'), ProcessResources).configure {
-        it.from(protoSourceSet.proto) { CopySpec cs ->
-          cs.include '**/*.proto'
-        }
-      }
+      Provider<GenerateProtoTask> generateProtoTask = registerGenerateProtoTask(protoVariant)
 
       postConfigure.add {
         project.plugins.withId("eclipse") {
@@ -272,8 +291,8 @@ class ProtobufPlugin implements Plugin<Project> {
         }
 
         project.plugins.withId("idea") {
-          boolean isTest = Utils.isTest(sourceSet.name)
-          protoSourceSet.proto.srcDirs.each { File protoDir ->
+          boolean isTest = Utils.isTest(protoVariant.name)
+          protoVariant.sources.proto.srcDirs.each { File protoDir ->
             Utils.addToIdeSources(project, isTest, protoDir, false)
           }
           Utils.addToIdeSources(project, isTest, project.files(extractProtosTask).singleFile, true)
@@ -322,7 +341,7 @@ class ProtobufPlugin implements Plugin<Project> {
         variantSourceSet.extendsFrom(protobufExtension.sourceSets.getByName(sourceProvider.name))
       }
 
-      Provider<GenerateProtoTask> generateProtoTask = addGenerateProtoTask(variantSourceSet) {
+      Provider<GenerateProtoTask> generateProtoTask = registerGenerateProtoTask(variantSourceSet) {
         it.setVariant(variant, isTestVariant)
         it.flavors = variant.productFlavors.collect { it.name }
         if (variant.hasProperty('buildType')) {
@@ -366,24 +385,15 @@ class ProtobufPlugin implements Plugin<Project> {
      * compiled. For Java it's the sourceSet that sourceSetOrVariantName stands
      * for; for Android it's the collection of sourceSets that the variant includes.
      */
-    private Provider<GenerateProtoTask> addGenerateProtoTask(
-        ProtoSourceSet protoSourceSet,
-        Action<GenerateProtoTask> configureAction
-    ) {
-      String sourceSetName = protoSourceSet.name
-      String taskName = 'generate' + Utils.getSourceSetSubstringForTaskNames(sourceSetName) + 'Proto'
-      Provider<String> outDir = project.providers.provider {
-        "${this.protobufExtension.generatedFilesBaseDir}/${sourceSetName}".toString()
+    private Provider<GenerateProtoTask> registerGenerateProtoTask(ProtoVariant protoVariant) {
+      String taskName = "generate${Utils.getSourceSetSubstringForTaskNames(protoVariant.name)}Proto"
+      Provider<GenerateProtoTask> task = project.tasks.register(taskName, GenerateProtoTask) { GenerateProtoTask task ->
+        task.description = "Compiles Proto source for '${protoVariant.name}'"
+        task.outputBaseDir = protoVariant.outputDir
+        task.addSourceDirs(protoVariant.sources.proto)
+        task.addIncludeDir(protoVariant.sources.proto.sourceDirectories)
+        task.addIncludeDir(protoVariant.sources.includeProtoDirs)
       }
-      Provider<GenerateProtoTask> task = project.tasks.register(taskName, GenerateProtoTask) {
-        it.description = "Compiles Proto source for '${sourceSetName}'".toString()
-        it.outputBaseDir = outDir
-        it.addSourceDirs(protoSourceSet.proto)
-        it.addIncludeDir(protoSourceSet.proto.sourceDirectories)
-        it.addIncludeDir(protoSourceSet.includeProtoDirs)
-        configureAction.execute(it)
-      }
-      protoSourceSet.output.from(task.map { GenerateProtoTask it -> it.outputSourceDirectories })
       return task
     }
 
