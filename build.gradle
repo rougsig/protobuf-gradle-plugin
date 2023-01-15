@@ -53,7 +53,24 @@ configurations {
     testProjectRuntime
 }
 
+sourceSets {
+  main {
+    java {
+      // remove all java sources for java plugin.
+      // Java will be compiled by groovy plugin.
+      srcDirs = []
+    }
+    groovy {
+      srcDirs "src/main/java"
+      srcDirs "src/main/groovy"
+    }
+  }
+}
+
 dependencies {
+  // Used for `KotlinCompile` class
+  compileOnly "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:1.7.22"
+
   compileOnly "com.android.tools.build:gradle:7.3.0"
   // fix for `java.lang.NoClassDefFoundError: com.android.repository.Revision`
   // `Revision` used in `com.android.build.gradle.BaseExtension`
