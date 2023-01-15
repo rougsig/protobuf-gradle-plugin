@@ -5,6 +5,8 @@ import org.gradle.api.Named;
 import java.util.Set;
 
 public interface ProtoVariant extends Named {
+    GenerateProtoTaskSpec getGenerateProtoTaskSpec();
+
     ProtoSourceSet getSources();
 
     Set<String> getSourceSets();

@@ -12,6 +12,7 @@ import java.util.Set;
 public class DefaultProtoVariant implements ProtoVariant {
     private final String name;
     private final ProtoSourceSet sources;
+    private final GenerateProtoTaskSpec generateProtoTaskSpec;
 
     private Set<String> sourceSets = new HashSet<String>();
     private boolean isTest = false;
@@ -21,12 +22,19 @@ public class DefaultProtoVariant implements ProtoVariant {
     public DefaultProtoVariant(String name, ObjectFactory objects) {
         this.name = name;
         this.sources = new DefaultProtoSourceSet(name, objects);
+        this.generateProtoTaskSpec = new DefaultGenerateProtoTaskSpec(objects);
+        this.generateProtoTaskSpec.getOutputSubDir().convention(name);
     }
 
     @NotNull
     @Override
     public String getName() {
         return this.name;
+    }
+
+    @Override
+    public GenerateProtoTaskSpec getGenerateProtoTaskSpec() {
+        return this.generateProtoTaskSpec;
     }
 
     @Override
