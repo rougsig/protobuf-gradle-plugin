@@ -54,8 +54,13 @@ configurations {
 }
 
 dependencies {
-  compileOnly "com.android.tools.build:gradle:4.1.0"
-  compileOnly "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:1.7.22"
+  compileOnly "com.android.tools.build:gradle:7.3.0"
+  // fix for `java.lang.NoClassDefFoundError: com.android.repository.Revision`
+  // `Revision` used in `com.android.build.gradle.BaseExtension`
+  compileOnly "com.android.tools:repository:30.3.1"
+  // fix for `java.lang.NoClassDefFoundError: com.android.builder.testing.api.DeviceProvider`
+  // `DeviceProvider` used in `com.android.build.gradle.BaseExtension`
+  compileOnly "com.android.tools.build:builder-test-api:7.3.0"
 
   implementation 'com.google.gradle:osdetector-gradle-plugin:1.7.1'
 
