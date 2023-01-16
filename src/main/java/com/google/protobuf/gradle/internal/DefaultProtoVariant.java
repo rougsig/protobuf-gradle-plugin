@@ -3,7 +3,9 @@ package com.google.protobuf.gradle.internal;
 import com.google.protobuf.gradle.tasks.GenerateProtoTaskSpec;
 import com.google.protobuf.gradle.tasks.ProtoSourceSet;
 import com.google.protobuf.gradle.tasks.ProtoVariant;
+import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.internal.reflect.Instantiator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -19,10 +21,15 @@ public class DefaultProtoVariant implements ProtoVariant {
     private String buildType = null;
     private Set<String> flavors = new HashSet<String>();
 
-    public DefaultProtoVariant(String name, ObjectFactory objects) {
+    public DefaultProtoVariant(
+        String name,
+        Instantiator instantiator,
+        CollectionCallbackActionDecorator collectionCallbackActionDecorator,
+        ObjectFactory objects
+    ) {
         this.name = name;
         this.sources = new DefaultProtoSourceSet(name, objects);
-        this.generateProtoTaskSpec = new DefaultGenerateProtoTaskSpec(objects);
+        this.generateProtoTaskSpec = new DefaultGenerateProtoTaskSpec(instantiator, collectionCallbackActionDecorator, objects);
         this.generateProtoTaskSpec.getOutputSubDir().convention(name);
     }
 

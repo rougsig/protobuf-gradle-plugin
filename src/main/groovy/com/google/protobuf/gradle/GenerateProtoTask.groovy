@@ -66,7 +66,7 @@ import org.gradle.api.tasks.TaskAction
 // TODO(zhangkun83): add per-plugin output dir reconfiguraiton.
 @CompileStatic
 @CacheableTask
-public abstract class GenerateProtoTask extends DefaultTask {
+abstract class GenerateProtoTask extends DefaultTask {
   // Windows CreateProcess has command line limit of 32768:
   // https://msdn.microsoft.com/en-us/library/windows/desktop/ms682425(v=vs.85).aspx
   static final int WINDOWS_CMD_LENGTH_LIMIT = 32760
@@ -178,11 +178,6 @@ public abstract class GenerateProtoTask extends DefaultTask {
     return java.path
   }
 
-  void setOutputBaseDir(Provider<String> outputBaseDir) {
-    Preconditions.checkState(this.outputBaseDir == null, 'outputBaseDir is already set')
-    this.outputBaseDir = outputBaseDir
-  }
-
   @SkipWhenEmpty
   @PathSensitive(PathSensitivity.RELATIVE)
   @IgnoreEmptyDirectories
@@ -231,7 +226,7 @@ public abstract class GenerateProtoTask extends DefaultTask {
   }
 
   private List<ExecutableLocator> getAllExecutableLocators() {
-    [toolsLocator.protoc] + spec.get().plugins.collect { PluginSpec it -> toolsLocator.plugins.getByName(it.name) }
+    [toolsLocator.protoc] + spec.get().plugins.collect { PluginSpec it -> toolsLocator.executables.getByName(it.name) }
   }
 
   private String getDescriptorPath() {
@@ -257,7 +252,7 @@ public abstract class GenerateProtoTask extends DefaultTask {
   // constructor arguments. We use the initializing flag to prevent users from
   // accidentally modifying them.
   @OutputDirectory
-  abstract Provider<String> getOutputBaseDir()
+  abstract Property<String> getOutputBaseDir()
 
   //===========================================================================
   //        Configuration methods
@@ -282,7 +277,7 @@ public abstract class GenerateProtoTask extends DefaultTask {
   //===========================================================================
 
   private String getOutputDir(PluginSpec plugin) {
-    return "${outputBaseDir.get()}/${plugin.outputSubDir}"
+    return "${outputBaseDir.get()}/${plugin.outputSubDir.get()}"
   }
 
   /**
@@ -359,7 +354,7 @@ public abstract class GenerateProtoTask extends DefaultTask {
       baseCmd += "--${builtin.name}_out=${outPrefix}${getOutputDir(builtin)}".toString()
     }
 
-    Map<String, ExecutableLocator> executableLocations = toolsLocator.plugins.asMap
+    Map<String, ExecutableLocator> executableLocations = toolsLocator.executables.asMap
     // Handle code generation plugins
     spec.plugins.each { plugin ->
       String name = plugin.name

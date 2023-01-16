@@ -42,7 +42,7 @@ import org.gradle.api.artifacts.Dependency
 class ToolsLocator {
 
   final ExecutableLocator protoc
-  final NamedDomainObjectContainer<ExecutableLocator> plugins
+  final NamedDomainObjectContainer<ExecutableLocator> executables
 
   static List<String> artifactParts(String artifactCoordinate) {
     String artifact
@@ -66,7 +66,7 @@ class ToolsLocator {
 
   ToolsLocator(Project project) {
     protoc = new ExecutableLocator('protoc')
-    plugins = project.container(ExecutableLocator)
+    executables = project.objects.domainObjectContainer(ExecutableLocator)
   }
 
   /**
@@ -82,7 +82,7 @@ class ToolsLocator {
     } else if (protoc.path == null) {
       protoc.path = 'protoc'
     }
-    for (ExecutableLocator pluginLocator in plugins) {
+    for (ExecutableLocator pluginLocator in executables) {
       if (pluginLocator.artifact != null) {
         resolveLocator(project, pluginLocator)
       } else if (pluginLocator.path == null) {

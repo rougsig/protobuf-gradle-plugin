@@ -29,14 +29,17 @@
  */
 package com.google.protobuf.gradle
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.api.UnitTestVariant
 import com.android.builder.model.SourceProvider
 import com.google.protobuf.gradle.internal.DefaultProtoSourceSet
+import com.google.protobuf.gradle.internal.DefaultProtoVariantContainer
 import com.google.protobuf.gradle.internal.ProjectExt
 import com.google.protobuf.gradle.tasks.ProtoSourceSet
 import com.google.protobuf.gradle.tasks.ProtoVariant
+import com.google.protobuf.gradle.tasks.ProtoVariantContainer
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import groovy.transform.TypeCheckingMode
@@ -52,13 +55,18 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.internal.CollectionCallbackActionDecorator
 import org.gradle.api.internal.artifacts.ArtifactAttributes
 import org.gradle.api.plugins.AppliedPlugin
 import org.gradle.api.provider.Provider
+import org.gradle.api.reflect.TypeOf
 import org.gradle.api.tasks.SourceSet
+import org.gradle.internal.reflect.Instantiator
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+import javax.inject.Inject
 
 /**
  * The main class for the protobuf plugin.
@@ -79,14 +87,32 @@ class ProtobufPlugin implements Plugin<Project> {
     private Project project
     private ProtobufExtension protobufExtension
     private boolean wasApplied = false
+    private final Instantiator instantiator
+    private final CollectionCallbackActionDecorator collectionCallbackActionDecorator
 
-    void apply(final Project project) {
+    @Inject
+    public ProtobufPlugin(
+      Instantiator instantiator,
+      CollectionCallbackActionDecorator collectionCallbackActionDecorator
+    ) {
+      this.instantiator = instantiator
+      this.collectionCallbackActionDecorator = collectionCallbackActionDecorator
+    }
+
+    void apply(Project project) {
       if (GradleVersion.current() < GradleVersion.version("5.6")) {
         throw new GradleException(
           "Gradle version is ${project.gradle.gradleVersion}. Minimum supported version is 5.6")
       }
 
-      this.protobufExtension = project.extensions.create("protobuf", ProtobufExtension, project)
+      ProtoVariantContainer protoVariantContainer = instantiator.newInstance(DefaultProtoVariantContainer.class, instantiator, project.objects, collectionCallbackActionDecorator)
+      this.protobufExtension = project.extensions.create(
+        new TypeOf<ProtobufExtension>() {},
+        "protobuf",
+        ProtobufExtension,
+        project,
+        protoVariantContainer
+      )
 
       this.project = project
 
@@ -137,28 +163,21 @@ class ProtobufPlugin implements Plugin<Project> {
             setupExtractProtosTask(protoSourceSet, protobufConfig)
           }
 
-          NamedDomainObjectContainer<ProtoSourceSet> variantSourceSets =
-            project.objects.domainObjectContainer(ProtoSourceSet) { String name ->
-              new DefaultProtoSourceSet(name, project.objects)
-            }
           ProjectExt.forEachVariant(this.project) { BaseVariant variant ->
-            addTasksForVariant(variant, variantSourceSets, postConfigure)
+            ProtoVariant protoVariant = protobufExtension.variants.create(variant.name)
+            addTasksForVariant(variant, protoVariant, postConfigure)
           }
         } else {
-          project.sourceSets.configureEach { sourceSet ->
-            ProtoSourceSet protoSourceSet = protobufExtension.sourceSets.create(sourceSet.name)
+          project.sourceSets.configureEach { SourceSet sourceSet ->
+            ProtoVariant protoVariant = protobufExtension.variants.create(sourceSet.name)
+            ProtoSourceSet protoSourceSet = protoVariant.sources
             addSourceSetExtension(sourceSet, protoSourceSet)
             Configuration protobufConfig = createProtobufConfiguration(protoSourceSet)
             Configuration compileProtoPath = createCompileProtoPathConfiguration(protoSourceSet)
-            addTasksForSourceSet(sourceSet, protoSourceSet, protobufConfig, compileProtoPath, postConfigure)
+            addTasksForSourceSet(sourceSet, protoVariant, protobufConfig, compileProtoPath, postConfigure)
           }
         }
         project.afterEvaluate {
-          this.protobufExtension.configureTasks()
-          // Disallow user configuration outside the config closures, because the operations just
-          // after the doneConfig() loop over the generated outputs and will be out-of-date if
-          // plugin output is added after this point.
-          this.protobufExtension.generateProtoTasks.all().configureEach { it.doneConfig() }
           postConfigure.each { it.call() }
           // protoc and codegen plugin configuration may change through the protobuf{}
           // block. Only at this point the configuration has been finalized.
@@ -379,9 +398,9 @@ class ProtobufPlugin implements Plugin<Project> {
         CopyActionFacade copyActionFacade = CopyActionFacade.Loader.create(it.project, it.objectFactory)
         it.spec.set(protoVariant.generateProtoTaskSpec)
         it.description = "Compiles Proto source for '${variantName}'".toString()
-        it.outputBaseDir = project.providers.provider {
+        it.outputBaseDir.set(project.providers.provider {
           "${defaultGeneratedFilesBaseDir}/${variantName}".toString()
-        }
+        })
         it.addSourceDirs(protoVariant.sources.proto)
         it.addIncludeDir(protoVariant.sources.proto.sourceDirectories)
         it.addIncludeDir(protoVariant.sources.includeProtoDirs)

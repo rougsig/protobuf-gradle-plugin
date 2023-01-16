@@ -21,25 +21,25 @@ public interface GenerateProtoTaskSpec {
      * Returns the container of protoc plugins.
      */
     @Nested
-    NamedDomainObjectContainer<PluginSpec> getPlugins();
+    PluginSpecContainer getPlugins();
 
     /**
-     * Configures the protoc plugins in a closure, which will be maniuplating a
+     * Configures the protoc plugins in a closure, which will be manipulating a
      * NamedDomainObjectContainer&lt;PluginOptions&gt;.
      */
     @Internal
-    void plugins(final Action<NamedDomainObjectContainer<PluginSpec>> action);
+    void plugins(final Action<PluginSpecContainer> action);
 
     /**
      * Returns the container of protoc builtins.
      */
     @Nested
-    NamedDomainObjectContainer<PluginSpec> getBuiltins();
+    PluginSpecContainer getBuiltins();
 
     /**
      * Configures the protoc builtins in a closure, which will be manipulating a
      * NamedDomainObjectContainer&lt;PluginOptions&gt;.
      */
     @Internal
-    void builtins(final Action<NamedDomainObjectContainer<PluginSpec>> action);
+    void builtins(final Action<PluginSpecContainer> action);
 }

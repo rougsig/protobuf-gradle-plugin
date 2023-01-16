@@ -9,67 +9,67 @@ import org.gradle.api.Action;
 public class GenerateProtoTaskCollection {
     private final DefaultProtoVariantSelector selector;
 
-    public GenerateProtoTaskCollection(final DefaultProtoVariantSelector selector) {
+    public GenerateProtoTaskCollection(DefaultProtoVariantSelector selector) {
         this.selector = selector;
     }
 
     @Deprecated
-    public void all(final Action<GenerateProtoTaskSpec> configureAction) {
-        selector.all((final ProtoVariant variant) -> {
+    public void all(GenerateProtoTaskSpecAction configureAction) {
+        selector.all((ProtoVariant variant) -> {
             configureAction.execute(variant.getGenerateProtoTaskSpec());
         });
     }
 
     @Deprecated
     public void ofSourceSet(
-        final String sourceSet,
-        final Action<GenerateProtoTaskSpec> configureAction
+        String sourceSet,
+        GenerateProtoTaskSpecAction configureAction
     ) {
-        selector.withSourceSet(sourceSet).all((final ProtoVariant variant) -> {
+        selector.withSourceSet(sourceSet).all((ProtoVariant variant) -> {
             configureAction.execute(variant.getGenerateProtoTaskSpec());
         });
     }
 
     @Deprecated
     public void ofFlavor(
-        final String flavor,
-        final Action<GenerateProtoTaskSpec> configureAction
+        String flavor,
+        GenerateProtoTaskSpecAction configureAction
     ) {
-        selector.withFlavor(flavor).all((final ProtoVariant variant) -> {
+        selector.withFlavor(flavor).all((ProtoVariant variant) -> {
             configureAction.execute(variant.getGenerateProtoTaskSpec());
         });
     }
 
     @Deprecated
     public void ofBuildType(
-        final String buildType,
-        final Action<GenerateProtoTaskSpec> configureAction
+        String buildType,
+        GenerateProtoTaskSpecAction configureAction
     ) {
-        selector.withBuildType(buildType).all((final ProtoVariant variant) -> {
+        selector.withBuildType(buildType).all((ProtoVariant variant) -> {
             configureAction.execute(variant.getGenerateProtoTaskSpec());
         });
     }
 
     @Deprecated
     public void ofVariant(
-        final String variantName,
-        final Action<GenerateProtoTaskSpec> configureAction
+        String variantName,
+        GenerateProtoTaskSpecAction configureAction
     ) {
-        selector.withName(variantName).all((final ProtoVariant variant) -> {
+        selector.withName(variantName).all((ProtoVariant variant) -> {
             configureAction.execute(variant.getGenerateProtoTaskSpec());
         });
     }
 
     @Deprecated
-    public void ofNonTest(final Action<GenerateProtoTaskSpec> configureAction) {
-        selector.withNonTest().all((final ProtoVariant variant) -> {
+    public void ofNonTest(GenerateProtoTaskSpecAction configureAction) {
+        selector.withNonTest().all((ProtoVariant variant) -> {
             configureAction.execute(variant.getGenerateProtoTaskSpec());
         });
     }
 
     @Deprecated
-    public void ofTest(final Action<GenerateProtoTaskSpec> configureAction) {
-        selector.withTest().all((final ProtoVariant variant) -> {
+    public void ofTest(GenerateProtoTaskSpecAction configureAction) {
+        selector.withTest().all((ProtoVariant variant) -> {
             configureAction.execute(variant.getGenerateProtoTaskSpec());
         });
     }
