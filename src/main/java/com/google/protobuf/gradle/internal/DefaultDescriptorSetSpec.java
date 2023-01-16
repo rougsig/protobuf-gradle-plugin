@@ -7,7 +7,7 @@ import org.gradle.api.provider.Property;
 
 public class DefaultDescriptorSetSpec implements DescriptorSetSpec {
     private final Property<Boolean> enabled;
-    private final RegularFileProperty outputFile;
+    private final Property<String> outputFile;
     private final Property<Boolean> includeSourceInfo;
     private final Property<Boolean> includeImports;
 
@@ -15,7 +15,7 @@ public class DefaultDescriptorSetSpec implements DescriptorSetSpec {
         this.enabled = objects.property(Boolean.class);
         this.enabled.convention(false);
 
-        this.outputFile = objects.fileProperty();
+        this.outputFile = objects.property(String.class);
 
         this.includeSourceInfo = objects.property(Boolean.class);
         this.includeSourceInfo.convention(false);
@@ -30,7 +30,7 @@ public class DefaultDescriptorSetSpec implements DescriptorSetSpec {
     }
 
     @Override
-    public RegularFileProperty getOutputFile() {
+    public Property<String> getOutputFilePath() {
         return this.outputFile;
     }
 

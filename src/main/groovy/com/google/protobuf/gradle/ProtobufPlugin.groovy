@@ -36,6 +36,7 @@ import com.android.builder.model.SourceProvider
 import com.google.protobuf.gradle.internal.DefaultProtoSourceSet
 import com.google.protobuf.gradle.internal.ProjectExt
 import com.google.protobuf.gradle.tasks.ProtoSourceSet
+import com.google.protobuf.gradle.tasks.ProtoVariant
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import groovy.transform.TypeCheckingMode
@@ -235,31 +236,34 @@ class ProtobufPlugin implements Plugin<Project> {
      * Creates Protobuf tasks for a sourceSet in a Java project.
      */
     private void addTasksForSourceSet(
-        SourceSet sourceSet, ProtoSourceSet protoSourceSet, Configuration protobufConfig,
+        SourceSet sourceSet, ProtoVariant protoVariant, Configuration protobufConfig,
         Configuration compileProtoPath, Collection<Closure> postConfigure) {
-      Provider<ProtobufExtract> extractProtosTask = setupExtractProtosTask(protoSourceSet, protobufConfig)
+      Provider<ProtobufExtract> extractProtosTask = setupExtractProtosTask(
+        protoVariant.sources,
+        protobufConfig
+      )
 
       Provider<ProtobufExtract> extractIncludeProtosTask = setupExtractIncludeProtosTask(
-        protoSourceSet, compileProtoPath)
+        protoVariant.sources,
+        compileProtoPath
+      )
 
       // Make protos in 'test' sourceSet able to import protos from the 'main' sourceSet.
       // Pass include proto files from main to test.
-      if (Utils.isTest(sourceSet.name)) {
-        protoSourceSet.includesFrom(protobufExtension.sourceSets.getByName("main"))
+      if (protoVariant.isTest) {
+        protoVariant.sources.includesFrom(protobufExtension.variants.getByName(SourceSet.MAIN_SOURCE_SET_NAME).sources)
       }
 
-      Provider<GenerateProtoTask> generateProtoTask = addGenerateProtoTask(protoSourceSet) {
-        it.sourceSet = sourceSet
-        it.doneInitializing()
-        it.builtins.maybeCreate("java")
-      }
+      protoVariant.sourceSets = [sourceSet.name] as Set<String>
+      protoVariant.generateProtoTaskSpec.builtins.maybeCreate("java")
+      Provider<GenerateProtoTask> generateProtoTask = addGenerateProtoTask(protoVariant)
 
-      sourceSet.java.srcDirs(protoSourceSet.output)
+      sourceSet.java.srcDirs(protoVariant.sources.output)
 
       // Include source proto files in the compiled archive, so that proto files from
       // dependent projects can import them.
       project.tasks.named(sourceSet.getTaskName('process', 'resources'), ProcessResources).configure {
-        it.from(protoSourceSet.proto) { CopySpec cs ->
+        it.from(protoVariant.sources.proto) { CopySpec cs ->
           cs.include '**/*.proto'
         }
       }
@@ -275,7 +279,7 @@ class ProtobufPlugin implements Plugin<Project> {
 
         project.plugins.withId("idea") {
           boolean isTest = Utils.isTest(sourceSet.name)
-          protoSourceSet.proto.srcDirs.each { File protoDir ->
+          protoVariant.sources.proto.srcDirs.each { File protoDir ->
             Utils.addToIdeSources(project, isTest, protoDir, false)
           }
           Utils.addToIdeSources(project, isTest, project.files(extractProtosTask).singleFile, true)
@@ -293,11 +297,11 @@ class ProtobufPlugin implements Plugin<Project> {
     @TypeChecked(TypeCheckingMode.SKIP) // Don't depend on AGP
     private void addTasksForVariant(
       Object variant,
-      NamedDomainObjectContainer<ProtoSourceSet> variantSourceSets,
+      ProtoVariant protoVariant,
       Collection<Closure> postConfigure
     ) {
       Boolean isTestVariant = variant instanceof TestVariant || variant instanceof UnitTestVariant
-      ProtoSourceSet variantSourceSet = variantSourceSets.create(variant.name)
+      ProtoSourceSet variantSourceSet = protoVariant.sources
 
       // ExtractIncludeProto task, one per variant (compilation unit).
       // Proto definitions from an AAR dependencies are in its JAR resources.
@@ -313,7 +317,7 @@ class ProtobufPlugin implements Plugin<Project> {
       if (variant instanceof TestVariant || variant instanceof UnitTestVariant) {
         postConfigure.add {
           variantSourceSet.includesFrom(protobufExtension.sourceSets.getByName("main"))
-          variantSourceSet.includesFrom(variantSourceSets.getByName(variant.testedVariant.name))
+          variantSourceSet.includesFrom(protobufExtension.sourceSets.getByName(variant.testedVariant.name))
         }
       }
 
@@ -324,14 +328,10 @@ class ProtobufPlugin implements Plugin<Project> {
         variantSourceSet.extendsFrom(protobufExtension.sourceSets.getByName(sourceProvider.name))
       }
 
-      Provider<GenerateProtoTask> generateProtoTask = addGenerateProtoTask(variantSourceSet) {
-        it.setVariant(variant, isTestVariant)
-        it.flavors = variant.productFlavors.collect { it.name }
-        if (variant.hasProperty('buildType')) {
-          it.buildType = variant.buildType.name
-        }
-        it.doneInitializing()
-      }
+      protoVariant.isTest = isTestVariant
+      protoVariant.flavors = variant.productFlavors.collect { it.name } as Set<String>
+      protoVariant.buildType = variant.hasProperty("buildType") ? variant.buildType.name : null
+      Provider<GenerateProtoTask> generateProtoTask = addGenerateProtoTask(protoVariant)
 
       if (project.android.hasProperty('libraryVariants')) {
           // Include source proto files in the compiled archive, so that proto files from
@@ -369,22 +369,22 @@ class ProtobufPlugin implements Plugin<Project> {
      * for; for Android it's the collection of sourceSets that the variant includes.
      */
     private Provider<GenerateProtoTask> addGenerateProtoTask(
-        ProtoSourceSet protoSourceSet,
-        Action<GenerateProtoTask> configureAction
+      ProtoVariant protoVariant
     ) {
-      String sourceSetName = protoSourceSet.name
-      String taskName = 'generate' + Utils.getSourceSetSubstringForTaskNames(sourceSetName) + 'Proto'
+      String variantName = protoVariant.name
+      String taskName = 'generate' + Utils.getSourceSetSubstringForTaskNames(variantName) + 'Proto'
       String defaultGeneratedFilesBaseDir = protobufExtension.defaultGeneratedFilesBaseDir
-      Provider<String> generatedFilesBaseDirProvider = protobufExtension.generatedFilesBaseDirProperty
+      Provider<String> generatedFilesBaseDirProvider = protobufExtension.generatedFilesBaseDir
       Provider<GenerateProtoTask> task = project.tasks.register(taskName, GenerateProtoTask) {
         CopyActionFacade copyActionFacade = CopyActionFacade.Loader.create(it.project, it.objectFactory)
-        it.description = "Compiles Proto source for '${sourceSetName}'".toString()
+        it.spec.set(protoVariant.generateProtoTaskSpec)
+        it.description = "Compiles Proto source for '${variantName}'".toString()
         it.outputBaseDir = project.providers.provider {
-          "${defaultGeneratedFilesBaseDir}/${sourceSetName}".toString()
+          "${defaultGeneratedFilesBaseDir}/${variantName}".toString()
         }
-        it.addSourceDirs(protoSourceSet.proto)
-        it.addIncludeDir(protoSourceSet.proto.sourceDirectories)
-        it.addIncludeDir(protoSourceSet.includeProtoDirs)
+        it.addSourceDirs(protoVariant.sources.proto)
+        it.addIncludeDir(protoVariant.sources.proto.sourceDirectories)
+        it.addIncludeDir(protoVariant.sources.includeProtoDirs)
         it.doLast { task ->
           String generatedFilesBaseDir = generatedFilesBaseDirProvider.get()
           if (generatedFilesBaseDir == defaultGeneratedFilesBaseDir) {
@@ -394,12 +394,11 @@ class ProtobufPlugin implements Plugin<Project> {
           copyActionFacade.copy { CopySpec spec ->
             spec.includeEmptyDirs = false
             spec.from(it.outputBaseDir)
-            spec.into("${generatedFilesBaseDir}/${sourceSetName}")
+            spec.into("${generatedFilesBaseDir}/${variantName}")
           }
         }
-        configureAction.execute(it)
       }
-      protoSourceSet.output.from(task.map { GenerateProtoTask it -> it.outputSourceDirectories })
+      protoVariant.sources.output.from(task.map { GenerateProtoTask it -> it.outputSourceDirectories })
       return task
     }
 

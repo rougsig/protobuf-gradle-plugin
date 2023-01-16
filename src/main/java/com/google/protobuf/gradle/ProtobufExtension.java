@@ -16,7 +16,7 @@ import org.gradle.api.provider.Property;
 /**
  * Adds the protobuf {} block as a property of the project.
  */
-public abstract class NewProtobufExtension {
+public abstract class ProtobufExtension {
     private final ToolsLocator tools;
 
     private final NamedDomainObjectContainer<ProtoSourceSet> sourceSets;
@@ -24,7 +24,7 @@ public abstract class NewProtobufExtension {
 
     private final String defaultGeneratedFilesBaseDir;
 
-    public NewProtobufExtension(final Project project) {
+    public ProtobufExtension(final Project project) {
         this.tools = new ToolsLocator(project);
 
         final ObjectFactory objects = project.getObjects();
